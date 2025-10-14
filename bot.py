@@ -110,7 +110,7 @@ app = Flask('')
 def home():
     return "Ravi is alive!"
 
-def run():
+def run_flask():
     app.run(host="0.0.0.0", port=8080)
 
 # ---------------------------------------
@@ -125,14 +125,12 @@ def self_ping():
         time.sleep(300)  # 5분마다 자기 자신 호출
 
 # ---------------------------------------
-# (5) Discord 봇 자동 재연결 실행
+# (5) 실행 스레드 (Flask + self-ping)
 # ---------------------------------------
-def run_bot():
-    bot.run(DISCORD_TOKEN, reconnect=True)
+Thread(target=run_flask).start()
+Thread(target=self_ping).start()
 
 # ---------------------------------------
-# (6) 실행 스레드
+# (6) Discord 봇 실행 (메인 스레드)
 # ---------------------------------------
-Thread(target=run).start()
-Thread(target=self_ping).start()
-Thread(target=run_bot).start()
+bot.run(DISCORD_TOKEN, reconnect=True)

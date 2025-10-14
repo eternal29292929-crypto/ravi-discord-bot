@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from flask import Flask  # ✅ keep-alive용
 from threading import Thread  # ✅ keep-alive용
+import requests, time  # ✅ self-ping용
 
 # === .env 파일 로드 (있으면 불러오고, 없으면 무시) ===
 env_path = Path(__file__).resolve().parent / ".env"
@@ -15,9 +16,6 @@ if env_path.exists():
 # === 환경 변수 불러오기 (Render에서도 작동) ===
 DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-
-print("✅ 불러온 디스코드 토큰:", "있음" if DISCORD_TOKEN else "없음")
-print("✅ 불러온 OpenAI 키:", "있음" if OPENAI_KEY else "없음")
 
 # === OpenAI 클라이언트 ===
 client_ai = OpenAI(api_key=OPENAI_KEY)
@@ -64,8 +62,8 @@ async def gpt(ctx, *, prompt):
                 await ctx.send(chunk)
         else:
             await ctx.send(response)
-    except Exception as e:
-        await ctx.send(f"❌ 오류가 발생했어요: {e}")
+    except:
+        pass  # ❌ 오류 메시지 출력 생략
 
 # ---------------------------------------
 # (2) 라비 이름 불릴 때 자동 반응 기능
@@ -98,9 +96,8 @@ async def on_message(message):
                     await message.channel.send(chunk)
             else:
                 await message.channel.send(response)
-
-        except Exception as e:
-            await message.channel.send(f"❌ 오류가 발생했어요: {e}")
+        except:
+            pass  # ❌ 오류 메시지 출력 생략
 
     await bot.process_commands(message)
 
@@ -116,10 +113,30 @@ def home():
 def run():
     app.run(host="0.0.0.0", port=8080)
 
+# ---------------------------------------
+# (4) self-ping 기능
+# ---------------------------------------
+def self_ping():
+    while True:
+        try:
+            requests.get("https://tippy-discord-bot.onrender.com")
+        except:
+            pass
+        time.sleep(300)  # 5분마다 자기 자신 호출
+
+# ---------------------------------------
+# (5) Discord 봇 자동 재연결 실행
+# ---------------------------------------
+def run_bot():
+    while True:
+        try:
+            bot.run(DISCORD_TOKEN, reconnect=True)
+        except:
+            time.sleep(10)  # ❌ 오류 로그 없이 조용히 재시도
+
+# ---------------------------------------
+# (6) 실행 스레드
+# ---------------------------------------
 Thread(target=run).start()
-
-# ---------------------------------------
-# (4) 봇 실행
-# ---------------------------------------
-bot.run(DISCORD_TOKEN)
-
+Thread(target=self_ping).start()
+Thread(target=run_bot).start()

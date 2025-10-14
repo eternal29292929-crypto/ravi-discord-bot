@@ -128,11 +128,7 @@ def self_ping():
 # (5) Discord 봇 자동 재연결 실행
 # ---------------------------------------
 def run_bot():
-    while True:
-        try:
-            bot.run(DISCORD_TOKEN, reconnect=True)
-        except:
-            time.sleep(10)  # ❌ 오류 로그 없이 조용히 재시도
+    bot.run(DISCORD_TOKEN, reconnect=True)
 
 # ---------------------------------------
 # (6) 실행 스레드
